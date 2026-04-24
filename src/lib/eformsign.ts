@@ -98,10 +98,17 @@ export async function createEformsignDocument(data: any) {
 
         console.log(`Creating e-FormSign document for ${data.product} using template ${templateId}`);
 
+        const countMap: { [key: string]: number } = { 'A': 1, 'B': 2, 'C': 3, 'D': 4 };
+        const count = countMap[data.productCount] || 1;
+        const p1 = (33000 * count).toLocaleString();
+        const p2 = (15000 * count).toLocaleString();
+        const formattedProductName = `[ ${data.productCount} ] 1~60회 월 ${p1}원 (제품) + 61~260회 월 ${p2}원 (라이프서비스)`;
+
         const fields = [
-            { id: '상품명', value: data.product },
-            { id: '제품명', value: data.productName },
-            { id: '구좌수', value: `${data.productCount}구좌` },
+            { id: '상품명', value: formattedProductName },
+            { id: '제품명1', value: data.productName },
+            { id: '제품명2', value: data.productName2 || '' },
+            { id: '구좌수', value: `${data.productCount}` },
             { id: '계약자이름', value: data.name },
             { id: '주민번호', value: data.residentId },
             { id: '성별', value: data.gender || '남' },
@@ -125,6 +132,12 @@ export async function createEformsignDocument(data: any) {
             { id: '대상자3_생년월일', value: data.healthcareTargets?.[2]?.birth || '' },
             { id: '대상자3_성별', value: data.healthcareTargets?.[2]?.gender || '' },
             { id: '대상자3_연락처', value: data.healthcareTargets?.[2]?.phone || '' },
+            // 헬스케어 대상자 4
+            { id: '대상자4_관계', value: data.healthcareTargets?.[3]?.relation || '' },
+            { id: '대상자4_성명', value: data.healthcareTargets?.[3]?.name || '' },
+            { id: '대상자4_생년월일', value: data.healthcareTargets?.[3]?.birth || '' },
+            { id: '대상자4_성별', value: data.healthcareTargets?.[3]?.gender || '' },
+            { id: '대상자4_연락처', value: data.healthcareTargets?.[3]?.phone || '' },
             { id: '결제방법', value: data.paymentMethod === 'card' ? '카드' : 'CMS(계좌)' },
             { id: '카드/은행명', value: data.paymentMethod === 'card' ? (data.paymentInfo?.cardCompany || '') : (data.paymentInfo?.bankName || '') },
             { id: '카드번호/계좌번호', value: data.paymentMethod === 'card' ? (data.paymentInfo?.cardNumber || '') : (data.paymentInfo?.accountNumber || '') },

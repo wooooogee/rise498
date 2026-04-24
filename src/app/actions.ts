@@ -3,6 +3,14 @@
 import { createEformsignDocument } from '@/lib/eformsign';
 import { addRegistrationToSheet } from '@/lib/googleSheets';
 
+function formatBirth8(birth: string) {
+  if (!birth || birth.length !== 6) return birth;
+  const year = parseInt(birth.substring(0, 2));
+  // 26년 이전이면 2000년대, 그 이후면 1900년대로 판단
+  const prefix = year <= 26 ? '20' : '19';
+  return prefix + birth;
+}
+
 export async function registerAction(data: any) {
   try {
     console.log('--- Register Action Started ---');
@@ -18,22 +26,39 @@ export async function registerAction(data: any) {
 
     // Google Sheets에 데이터 기록
     try {
-      const sheetData = {
+      const sheetData: any = {
         '신청일시': new Date().toLocaleString('ko-KR'),
         '상품명': data.product || '하이브리드698',
-        '성함': data.name,
+        '계약자': data.name,
         '연락처': data.phone,
         '주소': `${data.address} ${data.addressDetail}`,
-        '이메일': data.email,
-        '사원정보': data.employeeInfo,
-        '생년월일': data.residentId,
-        '성별': data.gender === '1' ? '남' : '여',
+        '제품명': data.hasMultipleProducts ? `${data.productName}, ${data.productName2}` : data.productName,
+        '구좌수': data.productCount,
+        '결제정보(카드/cms)': data.paymentMethod === 'card' ? '카드' : 'CMS',
+        '카드사/은행명': data.paymentMethod === 'card' ? data.paymentInfo.cardCompany : data.paymentInfo.bankName,
+        '카드번호/계좌번호': data.paymentMethod === 'card' ? data.paymentInfo.cardNumber : data.paymentInfo.accountNumber,
+        '유효기간': data.paymentMethod === 'card' ? data.paymentInfo.cardExpiry : '',
+        '결제일': data.paymentDate,
+        '영업자소속': data.salesAffiliation,
+        '영업자': data.salesName,
+        '영업자연락처': data.salesPhone,
         'document_id': eformResult.document_id,
         '상태': '신청완료'
       };
+
+      // 헬스케어 대상자 정보 추가
+      if (data.healthcareTargets && Array.isArray(data.healthcareTargets)) {
+        data.healthcareTargets.forEach((target: any, index: number) => {
+          if (target.name && target.birth) {
+            const birth8 = formatBirth8(target.birth);
+            const genderDigit = target.gender === '남' ? '1' : '2';
+            sheetData[`대상자${index + 1}`] = `${target.name} ${birth8}-${genderDigit} ${target.phone}`;
+          }
+        });
+      }
       
-      await addRegistrationToSheet(sheetData, '하이브리드698');
-      console.log('Google Sheets 기록 완료 (하이브리드698 시트)');
+      await addRegistrationToSheet(sheetData, '라이즈498');
+      console.log('Google Sheets 기록 완료 (라이즈498 시트)');
     } catch (sheetError) {
       console.error('Google Sheets 기록 중 실패 (프로세스는 계속됨):', sheetError);
     }
