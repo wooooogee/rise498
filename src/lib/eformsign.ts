@@ -106,6 +106,7 @@ export async function createEformsignDocument(data: any) {
 
         const fields = [
             { id: '상품명', value: formattedProductName },
+            { id: '제품명', value: data.productName },
             { id: '제품명1', value: data.productName },
             { id: '제품명2', value: data.productName2 || '' },
             { id: '구좌수', value: `${data.productCount}` },
