@@ -10,7 +10,7 @@ const EFORMSIGN_API_KEY = '3eb1cb36-3d57-4683-9b9b-5993feeb7817';
 export async function getEformsignToken() {
     const execution_time = Date.now().toString();
     const apiKeyBase64 = Buffer.from(EFORMSIGN_API_KEY).toString('base64');
-    
+
     const response = await fetch(`${EFORMSIGN_API_SERVER}/v2.0/api_auth/access_token`, {
         method: 'POST',
         headers: {
@@ -34,7 +34,7 @@ export async function getEformsignToken() {
 }
 
 const EFORMSIGN_TEMPLATE_ID_BETTER = 'd9e0306ea32f462194628f8045610816'; // [작업필요] 더좋은크루즈 템플릿 ID
-const EFORMSIGN_TEMPLATE_ID_Hybrid698 = '4e2f0d0f49a24b7caa89fc9c5baf8506';
+const EFORMSIGN_TEMPLATE_ID_Rise498 = '413d37beb6e8476498026303b14a6718';
 
 /**
  * Send SMS/Notification Talk to a viewer (Fallback method)
@@ -92,9 +92,9 @@ export async function createEformsignDocument(data: any) {
         const today = new Date().toISOString().split('T')[0];
         const cleanPhone = (data.phone || '').replace(/\D/g, '');
 
-        const templateId = data.product === '더좋은크루즈'
-            ? EFORMSIGN_TEMPLATE_ID_BETTER
-            : EFORMSIGN_TEMPLATE_ID_Hybrid698;
+        const templateId = data.product === '더좋은라이즈498'
+            ? EFORMSIGN_TEMPLATE_ID_Rise498
+            : EFORMSIGN_TEMPLATE_ID_BETTER;
 
         console.log(`Creating e-FormSign document for ${data.product} using template ${templateId}`);
 
@@ -105,6 +105,7 @@ export async function createEformsignDocument(data: any) {
         const formattedProductName = `[ ${data.productCount} ] 1~60회 월 ${p1}원 (제품) + 61~260회 월 ${p2}원 (라이프서비스)`;
 
         const fields = [
+            { id: '가입상품', value: data.productCount },
             { id: '상품명', value: formattedProductName },
             { id: '제품명', value: data.productName },
             { id: '제품명1', value: data.productName },
@@ -197,7 +198,7 @@ export async function createEformsignDocument(data: any) {
 
         const result = await response.json();
         const documentId = result.document?.id || result.document?.document_id || result.document_id;
-        
+
         if (!documentId) {
             throw new Error('이폼사인 문서 ID 누락');
         }
