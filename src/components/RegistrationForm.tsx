@@ -331,7 +331,7 @@ const RegistrationForm = () => {
         }
         setCurrentStep(7); // Final step
       } else {
-        alert(result.message || '등록 중 오류가 발생했습니다.');
+        alert(result?.message || '등록 중 오류가 발생했습니다.');
       }
     } catch (error: any) {
       console.error('Registration Error:', error);
