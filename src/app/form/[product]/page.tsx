@@ -30,8 +30,8 @@ export default function FormPage() {
   const [salesInfo, setSalesInfo] = useState({ affiliation: '', name: '', phone: '' });
 
   useEffect(() => {
-    const role = sessionStorage.getItem('role');
-    const info = sessionStorage.getItem('employeeInfo');
+    const role = localStorage.getItem('role');
+    const info = localStorage.getItem('employeeInfo');
     if (role !== 'sales') {
       router.push('/');
       return;

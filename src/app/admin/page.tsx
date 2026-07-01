@@ -20,14 +20,15 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'employees' | 'config' | 'data'>('employees');
 
   useEffect(() => {
-    const role = sessionStorage.getItem('role');
+    const role = localStorage.getItem('role');
     if (role !== 'admin') {
       router.push('/');
     }
   }, [router]);
 
   const handleLogout = () => {
-    sessionStorage.clear();
+    localStorage.removeItem('role');
+    localStorage.removeItem('employeeInfo');
     router.push('/');
   };
 

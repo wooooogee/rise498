@@ -41,9 +41,9 @@ export default function LoginPage() {
 
   const handleSelectEmployee = (emp: any) => {
     if (typeof window !== 'undefined') {
-      sessionStorage.setItem('role', 'sales');
+      localStorage.setItem('role', 'sales');
       // format and save employeeInfo as JSON string
-      sessionStorage.setItem('employeeInfo', JSON.stringify({
+      localStorage.setItem('employeeInfo', JSON.stringify({
         code: emp.code,
         name: emp.name,
         phone: emp.phone,
@@ -63,7 +63,7 @@ export default function LoginPage() {
       const result = await verifyLogin('admin', adminCode);
       if (result.success) {
         if (typeof window !== 'undefined') {
-          sessionStorage.setItem('role', 'admin');
+          localStorage.setItem('role', 'admin');
         }
         router.push('/admin');
       } else {

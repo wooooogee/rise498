@@ -176,7 +176,7 @@ const RegistrationForm = () => {
   // Load sales info from session storage
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const infoStr = sessionStorage.getItem('employeeInfo');
+      const infoStr = localStorage.getItem('employeeInfo');
       if (infoStr) {
         try {
           const info = JSON.parse(infoStr);

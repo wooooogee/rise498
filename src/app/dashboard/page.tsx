@@ -24,8 +24,8 @@ export default function DashboardPage() {
   const [employeeInfo, setEmployeeInfo] = useState('');
 
   useEffect(() => {
-    const role = sessionStorage.getItem('role');
-    const info = sessionStorage.getItem('employeeInfo');
+    const role = localStorage.getItem('role');
+    const info = localStorage.getItem('employeeInfo');
     if (role !== 'sales') {
       router.push('/');
     } else if (info) {
@@ -41,7 +41,8 @@ export default function DashboardPage() {
   }, [router]);
 
   const handleLogout = () => {
-    sessionStorage.clear();
+    localStorage.removeItem('role');
+    localStorage.removeItem('employeeInfo');
     router.push('/');
   };
 
