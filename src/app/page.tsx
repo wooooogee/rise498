@@ -26,7 +26,7 @@ export default function LoginPage() {
     setIsSearching(true);
     try {
       const res = await searchEmployeesAction(searchTerm);
-      if (res.success && res.data && res.data.length > 0) {
+      if (res.success && 'data' in res && res.data && res.data.length > 0) {
         setSearchResults(res.data);
       } else {
         setSearchResults([]);
