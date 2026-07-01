@@ -320,7 +320,7 @@ const RegistrationForm = () => {
     setSubmittingMessage('가입 신청서를 전송하고 있습니다...');
     try {
       const result = await registerAction(formData);
-      if (result.success) {
+      if (result && result.success) {
         setSubmittingMessage('계약서 PDF를 생성하고 있습니다. 잠시만 기다려 주세요...');
         if (result.documentId) {
           setCreatedDocumentId(result.documentId);

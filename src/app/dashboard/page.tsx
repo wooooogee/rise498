@@ -73,7 +73,27 @@ export default function DashboardPage() {
                 key={prod.id}
                 onClick={() => {
                   if (prod.route.startsWith('http')) {
-                    window.open(prod.route, '_blank');
+                    let finalRoute = prod.route;
+                    const empStr = localStorage.getItem('employeeInfo');
+                    if (empStr) {
+                      try {
+                        const emp = JSON.parse(empStr);
+                        const params = new URLSearchParams();
+                        if (emp.code) params.append('salesCode', emp.code);
+                        if (emp.name) params.append('salesName', emp.name);
+                        if (emp.codeName) params.append('salesCodeName', emp.codeName);
+                        if (emp.phone) params.append('salesPhone', emp.phone);
+                        if (emp.branch) params.append('salesBranch', emp.branch);
+                        if (emp.agency) params.append('salesAgency', emp.agency);
+                        if (emp.hq) params.append('salesHq', emp.hq);
+                        
+                        const paramStr = params.toString();
+                        if (paramStr) {
+                          finalRoute += (finalRoute.includes('?') ? '&' : '?') + paramStr;
+                        }
+                      } catch(e) {}
+                    }
+                    window.open(finalRoute, '_blank');
                   } else {
                     router.push(prod.route);
                   }
