@@ -73,6 +73,154 @@ export async function registerAction(data: any) {
     };
   } catch (error: any) {
     console.error('--- Register Action Fatal Error ---', error);
-    return { success: false, message: error.message || '등록 중 오류가 발생했습니다.' };
   }
 }
+
+export async function verifyLogin(type: 'admin' | 'sales', code: string) {
+  try {
+    if (type === 'admin') {
+      // Basic hardcoded admin password for now, can be changed via env
+      const adminCode = process.env.ADMIN_PASSWORD || '880805';
+      if (code === adminCode) {
+        return { success: true, message: '관리자 로그인 성공', role: 'admin' };
+      }
+      return { success: false, message: '관리자 비밀번호가 일치하지 않습니다.' };
+    } else {
+      // Sales verification using Google Sheets (verifyEmployee)
+      const { verifyEmployee } = await import('@/lib/googleSheets');
+      const result = await verifyEmployee(code);
+      if (result.success) {
+        return { success: true, message: '영업자 로그인 성공', role: 'sales', employeeInfo: result.employeeInfo };
+      }
+      return { success: false, message: '등록되지 않은 영업자 코드입니다.' };
+    }
+  } catch (error: any) {
+    console.error('Login Error:', error);
+    return { success: false, message: '로그인 처리 중 오류가 발생했습니다.' };
+  }
+}
+
+export async function searchEmployeesAction(term: string) {
+  try {
+    const { searchEmployees } = await import('@/lib/googleSheets');
+    return await searchEmployees(term);
+  } catch (error: any) {
+    console.error('Error searching employees:', error);
+    return { success: false, message: '검색 중 오류가 발생했습니다.' };
+  }
+}
+
+export async function getFormConfigAction(product: string) {
+  try {
+    const { getFormConfig } = await import('@/lib/googleSheets');
+    const config = await getFormConfig(product);
+    return { success: true, config: config || [] };
+  } catch (error: any) {
+    console.error('Error fetching config:', error);
+    return { success: false, config: [] };
+  }
+}
+
+export async function saveFormConfigAction(product: string, config: any[]) {
+  try {
+    const { saveFormConfig } = await import('@/lib/googleSheets');
+    return await saveFormConfig(product, config);
+  } catch (error: any) {
+    console.error('Error saving config:', error);
+    return { success: false, message: error.message };
+  }
+}
+
+export async function submitDynamicFormAction(product: string, data: any) {
+  try {
+    const { getSheetData, getAdminDoc } = await import('@/lib/googleSheets');
+    const doc = await getAdminDoc();
+    
+    // Convert sheet titles for each product
+    const titleMap: any = {
+      'car': '자동차',
+      'coway': '코웨이',
+      'internet': '인터넷TV',
+      'mobile': '휴대폰',
+      'insurance': '보험',
+      'bio': '바이오'
+    };
+    
+    const sheetTitle = titleMap[product] || product;
+    
+    let sheet = doc.sheetsByTitle[sheetTitle];
+    if (!sheet) {
+      sheet = await doc.addSheet({ title: sheetTitle, headerValues: Object.keys(data) });
+    }
+
+    try {
+      await sheet.loadHeaderRow();
+      const existingHeaders = sheet.headerValues;
+      const dataKeys = Object.keys(data);
+      const missingHeaders = dataKeys.filter(key => !existingHeaders.includes(key));
+      
+      if (missingHeaders.length > 0) {
+        await sheet.setHeaderRow([...existingHeaders, ...missingHeaders]);
+      }
+    } catch (e) {
+      await sheet.setHeaderRow(Object.keys(data));
+    }
+
+    await sheet.addRow({ '신청일시': new Date().toLocaleString('ko-KR'), ...data });
+
+    return { success: true, message: '성공적으로 등록되었습니다.' };
+  } catch (error: any) {
+    console.error('Submit Error:', error);
+    return { success: false, message: '등록 중 오류가 발생했습니다.' };
+  }
+}
+
+export async function getSheetDataAction(sheetTitle: string) {
+  try {
+    const { getSheetData } = await import('@/lib/googleSheets');
+    return await getSheetData(sheetTitle);
+  } catch (error: any) {
+    return { success: false, data: [] };
+  }
+}
+
+export async function registerEmployeeAction(data: any) {
+  try {
+    const { registerEmployeeCode } = await import('@/lib/googleSheets');
+    return await registerEmployeeCode(data);
+  } catch (error: any) {
+    console.error('Error registering employee:', error);
+    return { success: false, message: error.message };
+  }
+}
+
+export async function getEmployeesAction() {
+  try {
+    const { getEmployees } = await import('@/lib/googleSheets');
+    return await getEmployees();
+  } catch (error: any) {
+    return { success: false, message: error.message };
+  }
+}
+
+export async function updateEmployeeAction(code: string, data: any) {
+  try {
+    const { updateEmployee } = await import('@/lib/googleSheets');
+    return await updateEmployee(code, data);
+  } catch (error: any) {
+    console.error('Error updating employee:', error);
+    return { success: false, message: error.message };
+  }
+}
+
+export async function deleteEmployeeAction(code: string) {
+  try {
+    const { deleteEmployee } = await import('@/lib/googleSheets');
+    return await deleteEmployee(code);
+  } catch (error: any) {
+    return { success: false, message: error.message };
+  }
+}
+
+
+

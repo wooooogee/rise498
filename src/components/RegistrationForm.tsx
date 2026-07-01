@@ -18,9 +18,9 @@ const DEFAULT_TERMS = [
 본 결합 상품의 총 납입 금액은 498만원(실 라이프납입금 300만 원, 제품 1구좌 198만 원 기준), 260회 만기 상품입니다. 고객님께서 만기 회차 도래 시점까지 상품 금액을 완납하고 익월까지 라이프서비스를 이용하지 않고 해약하실 경우, 실 라이프납입금 전액과 만기 축하금을 지급해 드립니다. 단, 고객님께서 만기 회차 이전에 해지할 경우, 해지 시점을 기준으로 납입된 실 라이프납입금에 대해 공정거래위원회 해약 환급금 산정 기준 고시에 따라 환급합니다.`,
     required: true
   },
-  {
-    id: 'privacy',
-    title: '2. 개인(신용)정보의 수집·이용에 관한 사항(필수)',
+  { 
+    id: 'privacy', 
+    title: '2. 개인(신용)정보의 수집·이용에 관한 사항(필수)', 
     content: `이용목적
 · 라이프서비스에 관한 계약이행 및 서비스 제공
 · 라이프서비스 가입 고객 관리 및 라이프서비스계약의 체결·유지·관리, 상담(민원처리 등)
@@ -32,12 +32,12 @@ const DEFAULT_TERMS = [
 
 이용기간
 본 계약체결일로부터 계약종료 후 3년까지
-(단, 전자상거래 등에서의 소비자보호에 관한 법률 등 관련 법령의 규정에 의하여 보존할 필요가 있는 경우에는 그에 따름)`,
-    required: true
+(단, 전자상거래 등에서의 소비자보호에 관한 법률 등 관련 법령의 규정에 의하여 보존할 필요가 있는 경우에는 그에 따름)`, 
+    required: true 
   },
-  {
-    id: 'third_party',
-    title: '3. 제3자 제공 동의에 관한 사항(필수)',
+  { 
+    id: 'third_party', 
+    title: '3. 제3자 제공 동의에 관한 사항(필수)', 
     content: `본 계약과 관련하여 귀사가 본인으로부터 취득한 개인정보는 「개인정보보호법」 제17조와 제22조에 따라 제3자에게 제공할 경우에는 본인의 사전 동의를 얻어야 합니다. 이에 본인은 귀사가 본인의 개인정보를 아래와 같이 제3자에게 제공하는 것에 동의합니다.
 
 · 개인정보를 제공받는 자: 신한은행, 금융결제원, KICC, 에넥스텔레콤, KB헬스케어, (주)여의도자산관리본부, 신안소프트, 라이즈주식회사, 위더스앤씨
@@ -171,7 +171,27 @@ const RegistrationForm = () => {
         }
       });
     }
-  }, [formData.productCount]);
+  }, [formData.productCount, formData.healthcareTargets.length]);
+
+  // Load sales info from session storage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const infoStr = sessionStorage.getItem('employeeInfo');
+      if (infoStr) {
+        try {
+          const info = JSON.parse(infoStr);
+          setFormData(prev => ({
+            ...prev,
+            salesAffiliation: info.branch || '',
+            salesName: info.name || '',
+            salesPhone: info.phone || ''
+          }));
+        } catch (e) {
+          console.error('Error parsing employeeInfo', e);
+        }
+      }
+    }
+  }, []);
 
   const copyContractorToHealthcare = (index: number) => {
     const isSame = !formData.healthcareTargets[index].isSameAsContractor;
