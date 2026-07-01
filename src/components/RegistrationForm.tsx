@@ -7,6 +7,7 @@ import SignatureCanvas from 'react-signature-canvas';
 import TermsAgreement from './TermsAgreement';
 import { registerAction } from '@/app/actions';
 import Script from 'next/script';
+import CustomAlert from './CustomAlert';
 
 const DEFAULT_TERMS = [
   {
@@ -82,6 +83,16 @@ const RegistrationForm = () => {
   const [createdDocumentId, setCreatedDocumentId] = useState<string | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const sigCanvas = useRef<SignatureCanvas>(null);
+
+  const [alertState, setAlertState] = useState<{ isOpen: boolean; message: string; type?: 'info' | 'success' | 'error' }>({
+    isOpen: false,
+    message: '',
+    type: 'info'
+  });
+
+  const showAlert = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
+    setAlertState({ isOpen: true, message, type });
+  };
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' || 'light';
@@ -174,8 +185,24 @@ const RegistrationForm = () => {
   }, [formData.productCount, formData.healthcareTargets.length]);
 
   // Load sales info from session storage
+  // Load sales info from URL params or localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const salesName = searchParams.get('salesName') || searchParams.get('salesCodeName');
+      const salesPhone = searchParams.get('salesPhone');
+      const salesAffiliation = searchParams.get('salesBranch') || searchParams.get('salesAffiliation');
+      
+      if (salesName || salesPhone || salesAffiliation) {
+        setFormData(prev => ({
+          ...prev,
+          salesAffiliation: salesAffiliation || '',
+          salesName: salesName || '',
+          salesPhone: salesPhone ? salesPhone.replace(/[^0-9]/g, '').replace(/^(\d{2,3})(\d{3,4})(\d{4})$/, '$1-$2-$3') : '',
+        }));
+        return;
+      }
+
       const infoStr = localStorage.getItem('employeeInfo');
       if (infoStr) {
         try {
@@ -247,7 +274,7 @@ const RegistrationForm = () => {
 
   const saveSignature = () => {
     if (sigCanvas.current?.isEmpty()) {
-      alert('서명을 먼저 진행해 주세요.');
+      showAlert('서명을 먼저 진행해 주세요.', 'info');
       return false;
     }
     const dataURL = sigCanvas.current?.getTrimmedCanvas().toDataURL('image/png');
@@ -258,11 +285,11 @@ const RegistrationForm = () => {
   const handleNext = () => {
     if (currentStep === 0) {
       if (!formData.name || !formData.phone || !formData.address || !formData.residentId || !formData.gender || !formData.productName) {
-        alert('계약자 데이터 및 제품명을 모두 정확히 입력해 주세요.');
+        showAlert('계약자 데이터 및 제품명을 모두 정확히 입력해 주세요.', 'info');
         return;
       }
       if (formData.hasMultipleProducts && !formData.productName2) {
-        alert('두 번째 제품명을 입력해 주세요.');
+        showAlert('두 번째 제품명을 입력해 주세요.', 'info');
         return;
       }
     }
@@ -271,7 +298,7 @@ const RegistrationForm = () => {
       const count = countMap[formData.productCount] || 1;
       const isTargetValid = formData.healthcareTargets.slice(0, count).every(t => t.relation && t.name && t.birth && t.phone);
       if (!isTargetValid) {
-        alert('대상자 정보를 모두 누락 없이 입력해 주세요.');
+        showAlert('대상자 정보를 모두 누락 없이 입력해 주세요.', 'info');
         return;
       }
     }
@@ -279,12 +306,12 @@ const RegistrationForm = () => {
       if (formData.paymentMethod === 'card') {
         const pureCard = formData.paymentInfo.cardNumber.replace(/[^0-9]/g, '');
         if (pureCard.length < 11 || !formData.paymentInfo.cardCompany || !formData.paymentInfo.cardExpiry) {
-          alert('카드 정보를 모두 정확히 입력해 주세요 (번호는 11~16자리 가능).');
+          showAlert('카드 정보를 모두 정확히 입력해 주세요 (번호는 11~16자리 가능).', 'info');
           return;
         }
       } else {
         if (!formData.paymentInfo.accountNumber || !formData.paymentInfo.bankName) {
-          alert('계좌 정보를 모두 입력해 주세요.');
+          showAlert('계좌 정보를 모두 입력해 주세요.', 'info');
           return;
         }
       }
@@ -293,7 +320,7 @@ const RegistrationForm = () => {
       const requiredTerms = DEFAULT_TERMS.filter(t => t.required).map(t => t.id);
       const isAllRequiredAgreed = requiredTerms.every(id => (formData.agreement as any)[id]);
       if (!isAllRequiredAgreed) {
-        alert('필수 약관에 모두 동의해 주세요.');
+        showAlert('필수 약관에 모두 동의해 주세요.', 'info');
         return;
       }
     }
@@ -302,7 +329,7 @@ const RegistrationForm = () => {
     }
     if (currentStep === 6) { // Sales Info step
       if (!formData.salesName || !formData.salesAffiliation) {
-        alert('영업사원 정보(소속 포함)를 모두 정확히 입력해 주세요.');
+        showAlert('영업사원 정보(소속 포함)를 모두 정확히 입력해 주세요.', 'info');
         return;
       }
       handleSubmit();
@@ -331,11 +358,11 @@ const RegistrationForm = () => {
         }
         setCurrentStep(7); // Final step
       } else {
-        alert(result?.message || '등록 중 오류가 발생했습니다.');
+        showAlert(result?.message || '등록 중 오류가 발생했습니다.', 'error');
       }
     } catch (error: any) {
       console.error('Registration Error:', error);
-      alert(error.message || '신청 중 오류가 발생했습니다. 다시 시도해 주세요.');
+      showAlert(error.message || '신청 중 오류가 발생했습니다. 다시 시도해 주세요.', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -897,6 +924,12 @@ const RegistrationForm = () => {
       </div>
 
       <footer className="mt-20 text-[10px] text-sub font-bold uppercase tracking-[0.5em] italic">Premium Membership Platform // Advanced Digital Signing</footer>
+      <CustomAlert 
+        isOpen={alertState.isOpen} 
+        message={alertState.message} 
+        type={alertState.type} 
+        onClose={() => setAlertState(prev => ({ ...prev, isOpen: false }))} 
+      />
     </div>
   );
 };

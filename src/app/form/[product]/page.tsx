@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import RegistrationForm from '@/components/RegistrationForm';
 import { getFormConfigAction, submitDynamicFormAction } from '@/app/actions';
 import { ArrowLeft, Send } from 'lucide-react';
+import CustomAlert from '@/components/CustomAlert';
 
 const PRODUCT_NAMES: any = {
   car: '자동차',
@@ -19,6 +20,16 @@ export default function FormPage() {
   const params = useParams();
   const router = useRouter();
   const product = params.product as string;
+  
+  const [alertState, setAlertState] = useState<{ isOpen: boolean; message: string; type?: 'info' | 'success' | 'error' }>({
+    isOpen: false,
+    message: '',
+    type: 'info'
+  });
+
+  const showAlert = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
+    setAlertState({ isOpen: true, message, type });
+  };
   
   const [config, setConfig] = useState<any[]>([
     { id: 'address', label: '주소', type: 'text' },
@@ -37,7 +48,18 @@ export default function FormPage() {
       return;
     }
     
-    if (info) {
+    const searchParams = new URLSearchParams(window.location.search);
+    const salesName = searchParams.get('salesName') || searchParams.get('salesCodeName');
+    const salesPhone = searchParams.get('salesPhone');
+    const salesAffiliation = searchParams.get('salesBranch') || searchParams.get('salesAffiliation');
+    
+    if (salesName || salesPhone || salesAffiliation) {
+      setSalesInfo({
+        affiliation: salesAffiliation || '',
+        name: salesName || '',
+        phone: salesPhone ? salesPhone.replace(/[^0-9]/g, '').replace(/^(\d{2,3})(\d{3,4})(\d{4})$/, '$1-$2-$3') : '',
+      });
+    } else if (info) {
       try {
         const parsed = JSON.parse(info);
         setSalesInfo({
@@ -79,7 +101,7 @@ export default function FormPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.phone) {
-      alert('성명과 연락처는 필수입니다.');
+      showAlert('성명과 연락처는 필수입니다.', 'info');
       return;
     }
     setIsSubmitting(true);
@@ -99,10 +121,12 @@ export default function FormPage() {
     const res = await submitDynamicFormAction(product, dataToSubmit);
     setIsSubmitting(false);
     if (res.success) {
-      alert('성공적으로 접수되었습니다.');
-      router.push('/dashboard');
+      showAlert('성공적으로 접수되었습니다.', 'success');
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 1500);
     } else {
-      alert(res.message || '오류가 발생했습니다.');
+      showAlert(res.message || '오류가 발생했습니다.', 'error');
     }
   };
 
@@ -139,7 +163,12 @@ export default function FormPage() {
               type="tel" 
               placeholder="010-0000-0000"
               value={formData.phone || ''}
-              onChange={(e) => handleChange('phone', e.target.value)}
+              onChange={(e) => {
+                let val = e.target.value.replace(/[^0-9]/g, '');
+                if (val.length > 3 && val.length <= 7) val = val.substring(0, 3) + '-' + val.substring(3);
+                else if (val.length > 7) val = val.substring(0, 3) + '-' + val.substring(3, 7) + '-' + val.substring(7, 11);
+                handleChange('phone', val);
+              }}
               className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-6 focus:border-indigo-500 focus:bg-white outline-none font-bold transition-all"
             />
           </div>
@@ -192,7 +221,12 @@ export default function FormPage() {
                 <input 
                   type="tel" 
                   value={salesInfo.phone}
-                  onChange={(e) => setSalesInfo({...salesInfo, phone: e.target.value})}
+                  onChange={(e) => {
+                    let val = e.target.value.replace(/[^0-9]/g, '');
+                    if (val.length > 3 && val.length <= 7) val = val.substring(0, 3) + '-' + val.substring(3);
+                    else if (val.length > 7) val = val.substring(0, 3) + '-' + val.substring(3, 7) + '-' + val.substring(7, 11);
+                    setSalesInfo({...salesInfo, phone: val});
+                  }}
                   className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-3 px-4 focus:border-indigo-500 focus:bg-white outline-none font-bold transition-all text-sm"
                 />
               </div>
@@ -209,6 +243,13 @@ export default function FormPage() {
           </button>
         </form>
       </main>
+
+      <CustomAlert 
+        isOpen={alertState.isOpen} 
+        message={alertState.message} 
+        type={alertState.type} 
+        onClose={() => setAlertState(prev => ({ ...prev, isOpen: false }))} 
+      />
     </div>
   );
 }

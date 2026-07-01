@@ -64,7 +64,29 @@ export default function HubRise498Page() {
           className="w-full mb-4"
         >
           <button 
-            onClick={() => window.open('https://totalsign.netlify.app/apply/Z?product=%EB%8D%94%EC%A2%8B%EC%9D%80%EB%9D%BC%EC%9D%B4%EC%A6%88498', '_blank')}
+            onClick={() => {
+              let url = 'https://totalsign.netlify.app/apply/Z?product=%EB%8D%94%EC%A2%8B%EC%9D%80%EB%9D%BC%EC%9D%B4%EC%A6%88498';
+              const empStr = localStorage.getItem('employeeInfo');
+              if (empStr) {
+                try {
+                  const emp = JSON.parse(empStr);
+                  const params = new URLSearchParams();
+                  if (emp.code) params.append('salesCode', emp.code);
+                  if (emp.name) params.append('salesName', emp.name);
+                  if (emp.codeName) params.append('salesCodeName', emp.codeName);
+                  if (emp.phone) params.append('salesPhone', emp.phone);
+                  if (emp.branch) params.append('salesBranch', emp.branch);
+                  if (emp.agency) params.append('salesAgency', emp.agency);
+                  if (emp.hq) params.append('salesHq', emp.hq);
+                  
+                  const paramStr = params.toString();
+                  if (paramStr) {
+                    url += '&' + paramStr;
+                  }
+                } catch (e) {}
+              }
+              window.open(url, '_blank');
+            }}
             className="w-full relative overflow-hidden bg-gradient-to-r from-[#7a7cc7] to-[#6b6da3] text-white p-5 rounded-2xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-95 group"
           >
             <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity" />

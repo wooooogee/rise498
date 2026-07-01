@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { LogOut, Users, Settings, Database, Download, Plus, Trash2, Save } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { registerEmployeeAction, getFormConfigAction, saveFormConfigAction, getSheetDataAction, getEmployeesAction, updateEmployeeAction, deleteEmployeeAction } from '@/app/actions';
+import CustomAlert from '@/components/CustomAlert';
 
 const PRODUCTS = [
   { id: 'car', name: '자동차' },
@@ -18,6 +19,15 @@ const PRODUCTS = [
 export default function AdminPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'employees' | 'config' | 'data'>('employees');
+  const [alertState, setAlertState] = useState<{ isOpen: boolean; message: string; type?: 'info' | 'success' | 'error' }>({
+    isOpen: false,
+    message: '',
+    type: 'info'
+  });
+
+  const showAlert = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
+    setAlertState({ isOpen: true, message, type });
+  };
 
   useEffect(() => {
     const role = localStorage.getItem('role');
@@ -87,12 +97,19 @@ export default function AdminPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-slate-50/50 pointer-events-none" />
         <div className="max-w-6xl mx-auto space-y-8 relative z-10">
           <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] p-6 md:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 min-h-[700px]">
-            {activeTab === 'employees' && <EmployeeTab />}
-            {activeTab === 'config' && <ConfigTab />}
-            {activeTab === 'data' && <DataTab />}
+            {activeTab === 'employees' && <EmployeeTab showAlert={showAlert} />}
+            {activeTab === 'config' && <ConfigTab showAlert={showAlert} />}
+            {activeTab === 'data' && <DataTab showAlert={showAlert} />}
           </div>
         </div>
       </main>
+
+      <CustomAlert 
+        isOpen={alertState.isOpen} 
+        message={alertState.message} 
+        type={alertState.type} 
+        onClose={() => setAlertState(prev => ({ ...prev, isOpen: false }))} 
+      />
     </div>
   );
 }
@@ -100,7 +117,7 @@ export default function AdminPage() {
 // ---------------------------------------------------------------------------
 // Employee Registration & Management Tab
 // ---------------------------------------------------------------------------
-function EmployeeTab() {
+function EmployeeTab({ showAlert }: { showAlert: (msg: string, type?: 'info' | 'success' | 'error') => void }) {
   const [empData, setEmpData] = useState({ code: '', name: '', phone: '', hq: '', branch: '', agency: '', codeName: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
@@ -132,18 +149,18 @@ function EmployeeTab() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!empData.code || !empData.name || !empData.phone) {
-      alert('모든 필드를 입력해주세요.');
+      showAlert('모든 필드를 입력해주세요.', 'info');
       return;
     }
     setIsSubmitting(true);
     const res = await registerEmployeeAction(empData);
     setIsSubmitting(false);
     if (res.success) {
-      alert('영업자가 성공적으로 등록되었습니다.');
+      showAlert('영업자가 성공적으로 등록되었습니다.', 'success');
       setEmpData({ code: '', name: '', phone: '', hq: '', branch: '', agency: '', codeName: '' });
       loadEmployees();
     } else {
-      alert(res.message || '오류가 발생했습니다.');
+      showAlert(res.message || '오류가 발생했습니다.', 'error');
     }
   };
 
@@ -164,11 +181,11 @@ function EmployeeTab() {
     if (!editingCode) return;
     const res = await updateEmployeeAction(editingCode, editForm);
     if (res.success) {
-      alert('성공적으로 수정되었습니다.');
+      showAlert('성공적으로 수정되었습니다.', 'success');
       setEditingCode(null);
       loadEmployees();
     } else {
-      alert(res.message || '수정 중 오류가 발생했습니다.');
+      showAlert(res.message || '수정 중 오류가 발생했습니다.', 'error');
     }
   };
 
@@ -176,10 +193,10 @@ function EmployeeTab() {
     if (!confirm('정말로 이 영업자 코드를 삭제하시겠습니까?')) return;
     const res = await deleteEmployeeAction(code);
     if (res.success) {
-      alert('삭제되었습니다.');
+      showAlert('삭제되었습니다.', 'success');
       loadEmployees();
     } else {
-      alert(res.message || '삭제 중 오류가 발생했습니다.');
+      showAlert(res.message || '삭제 중 오류가 발생했습니다.', 'error');
     }
   };
 
@@ -340,7 +357,7 @@ function EmployeeTab() {
 // ---------------------------------------------------------------------------
 // Form Configurator Tab
 // ---------------------------------------------------------------------------
-function ConfigTab() {
+function ConfigTab({ showAlert }: { showAlert: (msg: string, type?: 'info' | 'success' | 'error') => void }) {
   const [selectedProduct, setSelectedProduct] = useState(PRODUCTS[0].id);
   const [fields, setFields] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -369,8 +386,8 @@ function ConfigTab() {
     setIsSaving(true);
     const res = await saveFormConfigAction(selectedProduct, fields);
     setIsSaving(false);
-    if (res.success) alert('저장되었습니다.');
-    else alert(res.message || '저장 중 오류가 발생했습니다.');
+    if (res.success) showAlert('저장되었습니다.', 'success');
+    else showAlert(res.message || '저장 중 오류가 발생했습니다.', 'error');
   };
 
   const addField = () => {
@@ -456,7 +473,7 @@ function ConfigTab() {
 // ---------------------------------------------------------------------------
 // Data Viewer Tab
 // ---------------------------------------------------------------------------
-function DataTab() {
+function DataTab({ showAlert }: { showAlert: (msg: string, type?: 'info' | 'success' | 'error') => void }) {
   const [selectedProduct, setSelectedProduct] = useState(PRODUCTS[0].id);
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -480,7 +497,7 @@ function DataTab() {
 
   const handleDownloadExcel = () => {
     if (data.length === 0) {
-      alert('다운로드할 데이터가 없습니다.');
+      showAlert('다운로드할 데이터가 없습니다.', 'info');
       return;
     }
     const prod = PRODUCTS.find(p => p.id === selectedProduct);

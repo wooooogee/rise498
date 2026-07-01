@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { verifyLogin, searchEmployeesAction } from '@/app/actions';
 import { User, Search, ArrowRight, X } from 'lucide-react';
 import Image from 'next/image';
+import CustomAlert from '@/components/CustomAlert';
 
 export default function LoginPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -14,12 +15,21 @@ export default function LoginPage() {
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [adminCode, setAdminCode] = useState('');
   const [isAdminLoading, setIsAdminLoading] = useState(false);
+  const [alertState, setAlertState] = useState<{ isOpen: boolean; message: string; type?: 'info' | 'success' | 'error' }>({
+    isOpen: false,
+    message: '',
+    type: 'info'
+  });
   const router = useRouter();
+
+  const showAlert = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
+    setAlertState({ isOpen: true, message, type });
+  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchTerm) {
-      alert('검색어를 입력해주세요.');
+      showAlert('검색어를 입력해주세요.', 'info');
       return;
     }
 
@@ -30,10 +40,10 @@ export default function LoginPage() {
         setSearchResults(res.data);
       } else {
         setSearchResults([]);
-        alert('일치하는 정보가 없습니다.');
+        showAlert('일치하는 정보가 없습니다.', 'error');
       }
     } catch (error) {
-      alert('검색 중 오류가 발생했습니다.');
+      showAlert('검색 중 오류가 발생했습니다.', 'error');
     } finally {
       setIsSearching(false);
     }
@@ -67,10 +77,10 @@ export default function LoginPage() {
         }
         router.push('/admin');
       } else {
-        alert(result.message);
+        showAlert(result.message, 'error');
       }
     } catch (error) {
-      alert('로그인 오류가 발생했습니다.');
+      showAlert('로그인 오류가 발생했습니다.', 'error');
     } finally {
       setIsAdminLoading(false);
     }
@@ -199,6 +209,13 @@ export default function LoginPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <CustomAlert 
+        isOpen={alertState.isOpen} 
+        message={alertState.message} 
+        type={alertState.type} 
+        onClose={() => setAlertState(prev => ({ ...prev, isOpen: false }))} 
+      />
     </div>
   );
 }
