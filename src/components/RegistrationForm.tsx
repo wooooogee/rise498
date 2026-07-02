@@ -509,7 +509,7 @@ const RegistrationForm = () => {
                         value={formData.address}
                         onClick={handleAddressSearch}
                         readOnly
-                        className="w-full bg-theme border border-theme rounded-2xl py-4.5 pl-12 sm:pl-14 pr-6 focus:border-indigo-500 outline-none text-base cursor-pointer transition-all"
+                        className="w-full bg-theme border border-theme rounded-2xl py-4.5 pl-12 sm:pl-14 pr-6 focus:border-indigo-500 outline-none text-base cursor-pointer transition-all caret-transparent"
                       />
                     </div>
                     <input type="text" placeholder="상세 주소를 입력하세요" value={formData.addressDetail} onChange={(e) => updateFormData('addressDetail', e.target.value)} className="w-full bg-theme border border-theme rounded-2xl py-4.5 px-6 focus:border-indigo-500 outline-none text-base transition-all" />

@@ -224,7 +224,30 @@ export async function addRegistrationToSheet(data: any, sheetTitle: string = '�
 
 const ADMIN_SPREADSHEET_ID = process.env.ADMIN_GOOGLE_SHEET_ID || SPREADSHEET_ID;
 
+// --- Caching Logic ---
+let cachedAdminDoc: GoogleSpreadsheet | null = null;
+let adminDocCacheTime = 0;
+
+export const dataCache = new Map<string, { data: any, timestamp: number }>();
+const CACHE_TTL = 1000 * 15; // 15 seconds default
+
+export function getCachedData(key: string, ttl: number = CACHE_TTL) {
+  const cached = dataCache.get(key);
+  if (cached && Date.now() - cached.timestamp < ttl) {
+    return cached.data;
+  }
+  return null;
+}
+
+export function setCachedData(key: string, data: any) {
+  dataCache.set(key, { data, timestamp: Date.now() });
+}
+// -----------------------
+
 export async function getAdminDoc() {
+  if (cachedAdminDoc && Date.now() - adminDocCacheTime < 1000 * 60 * 5) {
+    return cachedAdminDoc;
+  }
   const serviceAccountAuth = new JWT({
     email: GOOGLE_SERVICE_ACCOUNT_EMAIL,
     key: GOOGLE_PRIVATE_KEY,
@@ -232,11 +255,82 @@ export async function getAdminDoc() {
   });
   const doc = new GoogleSpreadsheet(ADMIN_SPREADSHEET_ID, serviceAccountAuth);
   await doc.loadInfo();
+  cachedAdminDoc = doc;
+  adminDocCacheTime = Date.now();
   return doc;
+}
+
+export const DEFAULT_PRODUCTS = [
+  { id: 'car', name: '자동차' },
+  { id: 'coway', name: '코웨이' },
+  { id: 'internet', name: '인터넷TV' },
+  { id: 'mobile', name: '휴대폰' },
+  { id: 'insurance', name: '보험' },
+  { id: 'bio', name: '바이오' }
+];
+
+export async function getDynamicProducts() {
+  try {
+    const cacheKey = `dynamicProducts`;
+    const cached = getCachedData(cacheKey, 1000 * 2); // 2 seconds cache
+    if (cached) return cached;
+
+    const doc = await getAdminDoc();
+    const sheet = doc.sheetsByTitle['form_configs'];
+    if (!sheet) {
+      setCachedData(cacheKey, DEFAULT_PRODUCTS);
+      return DEFAULT_PRODUCTS;
+    }
+
+    const rows = await sheet.getRows();
+    const row = rows.find(r => r.get('product') === '__PRODUCTS__');
+    if (row) {
+      const config = JSON.parse(row.get('config') || '[]');
+      if (config && config.length > 0) {
+        setCachedData(cacheKey, config);
+        return config;
+      }
+    }
+    
+    setCachedData(cacheKey, DEFAULT_PRODUCTS);
+    return DEFAULT_PRODUCTS;
+  } catch (e) {
+    console.error('Error fetching dynamic products:', e);
+    return DEFAULT_PRODUCTS;
+  }
+}
+
+export async function saveDynamicProducts(products: {id: string, name: string}[]) {
+  try {
+    const doc = await getAdminDoc();
+    let sheet = doc.sheetsByTitle['form_configs'];
+    if (!sheet) {
+      sheet = await doc.addSheet({ title: 'form_configs', headerValues: ['product', 'config'] });
+    }
+
+    const rows = await sheet.getRows();
+    const row = rows.find(r => r.get('product') === '__PRODUCTS__');
+    if (row) {
+      row.assign({ config: JSON.stringify(products) });
+      await row.save();
+    } else {
+      await sheet.addRow({ product: '__PRODUCTS__', config: JSON.stringify(products) });
+    }
+    
+    dataCache.delete(`dynamicProducts`);
+    return { success: true };
+  } catch (e: any) {
+    console.error('Error saving dynamic products:', e);
+    return { success: false, message: e.message };
+  }
 }
 
 export async function getFormConfig(product: string) {
   try {
+    const cacheKey = `formConfig_${product}`;
+    const cached = getCachedData(cacheKey, 1000 * 60 * 5); // 5 mins cache
+    if (cached) return cached;
+
     const doc = await getAdminDoc();
     const sheet = doc.sheetsByTitle['form_configs'];
     if (!sheet) return null;
@@ -244,7 +338,9 @@ export async function getFormConfig(product: string) {
     const rows = await sheet.getRows();
     const row = rows.find(r => r.get('product') === product);
     if (row) {
-      return JSON.parse(row.get('config') || '[]');
+      const config = JSON.parse(row.get('config') || '[]');
+      setCachedData(cacheKey, config);
+      return config;
     }
     return null;
   } catch (e) {
@@ -269,6 +365,10 @@ export async function saveFormConfig(product: string, config: any[]) {
     } else {
       await sheet.addRow({ product, config: JSON.stringify(config) });
     }
+    
+    // Invalidate cache
+    dataCache.delete(`formConfig_${product}`);
+    
     return { success: true };
   } catch (e: any) {
     console.error('Error saving form config:', e);
@@ -278,6 +378,10 @@ export async function saveFormConfig(product: string, config: any[]) {
 
 export async function getSheetData(sheetTitle: string) {
   try {
+    const cacheKey = `sheetData_${sheetTitle}`;
+    const cached = getCachedData(cacheKey);
+    if (cached) return { success: true, data: cached };
+
     const doc = await getAdminDoc();
     const sheet = doc.sheetsByTitle[sheetTitle];
     if (!sheet) return { success: true, data: [] }; // No data yet
@@ -291,6 +395,8 @@ export async function getSheetData(sheetTitle: string) {
       });
       return obj;
     });
+    
+    setCachedData(cacheKey, data);
     return { success: true, data };
   } catch (e: any) {
     console.error('Error fetching sheet data:', e);
@@ -336,6 +442,10 @@ export async function registerEmployeeCode(data: any) {
 
 export async function getEmployees() {
   try {
+    const cacheKey = 'employees';
+    const cached = getCachedData(cacheKey);
+    if (cached) return { success: true, data: cached };
+
     const doc = await getAdminDoc();
     const sheet = doc.sheetsByTitle['회원코드'];
     if (!sheet) return { success: true, data: [] };
@@ -361,6 +471,8 @@ export async function getEmployees() {
       phone: row.get('휴대폰번호'),
       status: row.get('재직구분')
     }));
+    
+    setCachedData(cacheKey, data);
     return { success: true, data };
   } catch (e: any) {
     console.error('Error fetching employees:', e);

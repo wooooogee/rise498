@@ -131,22 +131,35 @@ export async function saveFormConfigAction(product: string, config: any[]) {
   }
 }
 
+export async function getDynamicProductsAction() {
+  try {
+    const { getDynamicProducts } = await import('@/lib/googleSheets');
+    return await getDynamicProducts();
+  } catch (error: any) {
+    console.error('Error fetching dynamic products:', error);
+    return [];
+  }
+}
+
+export async function saveDynamicProductsAction(products: {id: string, name: string}[]) {
+  try {
+    const { saveDynamicProducts } = await import('@/lib/googleSheets');
+    return await saveDynamicProducts(products);
+  } catch (error: any) {
+    console.error('Error saving dynamic products:', error);
+    return { success: false, message: error.message };
+  }
+}
+
 export async function submitDynamicFormAction(product: string, data: any) {
   try {
-    const { getSheetData, getAdminDoc } = await import('@/lib/googleSheets');
+    const { getSheetData, getAdminDoc, getDynamicProducts } = await import('@/lib/googleSheets');
     const doc = await getAdminDoc();
     
-    // Convert sheet titles for each product
-    const titleMap: any = {
-      'car': '자동차',
-      'coway': '코웨이',
-      'internet': '인터넷TV',
-      'mobile': '휴대폰',
-      'insurance': '보험',
-      'bio': '바이오'
-    };
-    
-    const sheetTitle = titleMap[product] || product;
+    // Fetch dynamic products to map ID to actual product name
+    const dynamicProducts = await getDynamicProducts();
+    const prod = dynamicProducts.find((p: any) => p.id === product);
+    const sheetTitle = prod ? prod.name : product;
     
     let sheet = doc.sheetsByTitle[sheetTitle];
     if (!sheet) {

@@ -86,13 +86,30 @@ export default function LoginPage() {
     }
   };
 
+  const handleContainerClick = (e: React.MouseEvent | React.PointerEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName !== 'INPUT' && target.tagName !== 'BUTTON' && !target.closest('button')) {
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+      // 강제로 브라우저 기본 포커스/텍스트 선택 이벤트 취소
+      const selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+      }
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-4 relative">
+    <div 
+      className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-4 relative select-none"
+      onPointerDown={handleContainerClick}
+    >
       
       {/* Hidden Admin Trigger (Top Right Corner) */}
       <div 
         className="absolute top-0 right-0 w-16 h-16 cursor-default z-50"
-        onClick={() => setShowAdminLogin(true)}
+        onPointerDown={() => setShowAdminLogin(true)}
       />
 
       <motion.div 
@@ -100,7 +117,7 @@ export default function LoginPage() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md bg-white rounded-[2.5rem] p-8 shadow-xl shadow-indigo-500/5 border border-indigo-50"
       >
-        <div className="text-center mb-8 flex justify-center">
+        <div className="text-center mb-8 flex justify-center pointer-events-none">
           <img 
             src="/logo.png" 
             alt="RISE Logo" 
@@ -117,7 +134,7 @@ export default function LoginPage() {
             <div className="relative group">
               <input
                 type="text"
-                placeholder="사원코드, 코드명 또는 핸드폰 번호"
+                placeholder="코드, 코드명, 핸드폰"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-6 focus:border-indigo-500 focus:bg-white outline-none transition-all font-bold text-gray-900 pr-14"

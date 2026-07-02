@@ -173,27 +173,68 @@ export default function FormPage() {
             />
           </div>
 
-          {config.map((field) => (
-            <div key={field.id} className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 ml-1">{field.label}</label>
-              {field.type === 'textarea' ? (
-                <textarea
-                  placeholder={`${field.label} 입력`}
-                  value={formData[field.id] || ''}
-                  onChange={(e) => handleChange(field.id, e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-6 focus:border-indigo-500 focus:bg-white outline-none font-bold transition-all min-h-[100px]"
-                />
-              ) : (
-                <input
-                  type={field.type || 'text'}
-                  placeholder={`${field.label} 입력`}
-                  value={formData[field.id] || ''}
-                  onChange={(e) => handleChange(field.id, e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-6 focus:border-indigo-500 focus:bg-white outline-none font-bold transition-all"
-                />
-              )}
-            </div>
-          ))}
+          {config.map((field) => {
+            if (field.type === 'select') {
+              const optionsList = field.options ? field.options.split(',').map((o: string) => o.trim()).filter(Boolean) : [];
+              const currentSelected = formData[field.id] ? formData[field.id].split(',').map((s: string) => s.trim()).filter(Boolean) : [];
+              return (
+                <div key={field.id} className="space-y-3">
+                  <label className="text-xs font-bold text-gray-400 ml-1">{field.label}</label>
+                  <div className="flex flex-wrap gap-2">
+                    {optionsList.map((opt: string, idx: number) => {
+                      const isSelected = currentSelected.includes(opt);
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            if (field.isMulti) {
+                              if (isSelected) {
+                                handleChange(field.id, currentSelected.filter((o: string) => o !== opt).join(', '));
+                              } else {
+                                handleChange(field.id, [...currentSelected, opt].join(', '));
+                              }
+                            } else {
+                              // 단일 선택의 경우 이미 선택된 것을 누르면 취소되도록 할지, 아니면 그냥 유지할지
+                              handleChange(field.id, isSelected ? '' : opt);
+                            }
+                          }}
+                          className={`px-4 py-2.5 rounded-xl font-bold text-sm transition-all border ${
+                            isSelected
+                              ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/20'
+                              : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:bg-indigo-50'
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            }
+            return (
+              <div key={field.id} className="space-y-2">
+                <label className="text-xs font-bold text-gray-400 ml-1">{field.label}</label>
+                {field.type === 'textarea' ? (
+                  <textarea
+                    placeholder={`${field.label} 입력`}
+                    value={formData[field.id] || ''}
+                    onChange={(e) => handleChange(field.id, e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-6 focus:border-indigo-500 focus:bg-white outline-none font-bold transition-all min-h-[100px]"
+                  />
+                ) : (
+                  <input
+                    type={field.type || 'text'}
+                    placeholder={`${field.label} 입력`}
+                    value={formData[field.id] || ''}
+                    onChange={(e) => handleChange(field.id, e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-2xl py-4 px-6 focus:border-indigo-500 focus:bg-white outline-none font-bold transition-all"
+                  />
+                )}
+              </div>
+            );
+          })}
 
           <div className="pt-6 border-t border-gray-100">
             <h3 className="text-sm font-black text-gray-900 mb-4">영업자 정보</h3>

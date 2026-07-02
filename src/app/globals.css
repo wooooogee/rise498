@@ -34,6 +34,20 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
   transition: background-color 0.3s ease, color 0.3s ease;
+  
+  /* Prevent text selection and blinking cursor globally */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Allow text selection only on input elements */
+input, textarea, select, [contenteditable="true"] {
+  -webkit-user-select: auto;
+  -moz-user-select: auto;
+  -ms-user-select: auto;
+  user-select: auto;
 }
 
 /* Custom Scrollbar */

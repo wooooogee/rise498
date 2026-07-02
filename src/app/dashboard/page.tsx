@@ -3,25 +3,31 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { LogOut, FileText, Anchor, Car, Home, Tv, Smartphone, Shield, Beaker, User } from 'lucide-react';
+import { LogOut, FileText, Anchor, Car, Home, Tv, Smartphone, Shield, Beaker, User, Package } from 'lucide-react';
+import { getDynamicProductsAction } from '@/app/actions';
 
 const TOP_PRODUCTS = [
   { id: 'rise498', name: '가전결합(상조+헬스케어)', icon: FileText, color: 'bg-gradient-to-br from-indigo-500 to-indigo-700 shadow-xl shadow-indigo-200/60 border border-indigo-400/30', route: '/hub/rise498' },
   { id: 'goodhealth', name: '좋은건강크루즈', icon: Anchor, color: 'bg-gradient-to-br from-blue-500 to-blue-700 shadow-xl shadow-blue-200/60 border border-blue-400/30', route: 'https://totalsign.netlify.app/apply/H?product=%EC%A2%8B%EC%9D%80%EA%B1%B4%EA%B0%95%ED%81%AC%EB%A3%A8%EC%A6%88' },
 ];
 
-const BOTTOM_PRODUCTS = [
-  { id: 'car', name: '자동차', icon: Car },
-  { id: 'coway', name: '코웨이', icon: Home },
-  { id: 'internet', name: '인터넷TV', icon: Tv },
-  { id: 'mobile', name: '휴대폰', icon: Smartphone },
-  { id: 'insurance', name: '보험', icon: Shield },
-  { id: 'bio', name: '바이오', icon: Beaker },
-];
+const getIconForProduct = (id: string) => {
+  switch (id) {
+    case 'car': return Car;
+    case 'coway': return Home;
+    case 'internet': return Tv;
+    case 'mobile': return Smartphone;
+    case 'insurance': return Shield;
+    case 'bio': return Beaker;
+    default: return Package;
+  }
+};
 
 export default function DashboardPage() {
   const router = useRouter();
   const [employeeInfo, setEmployeeInfo] = useState('');
+  const [dynamicProducts, setDynamicProducts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const role = localStorage.getItem('role');
@@ -38,6 +44,12 @@ export default function DashboardPage() {
         setEmployeeInfo(info); // fallback if not json
       }
     }
+    
+    // Fetch products
+    getDynamicProductsAction().then(prods => {
+      setDynamicProducts(prods);
+      setIsLoading(false);
+    });
   }, [router]);
 
   const handleLogout = () => {
@@ -115,25 +127,33 @@ export default function DashboardPage() {
 
         {/* Bottom Products */}
         <section className="space-y-4">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-            {BOTTOM_PRODUCTS.map((prod, idx) => (
-              <motion.button
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 + idx * 0.05 }}
-                key={prod.id}
-                onClick={() => router.push(`/form/${prod.id}`)}
-                className="bg-white p-4 rounded-3xl shadow-sm border border-white flex flex-col items-center justify-center gap-3 hover:border-indigo-100 hover:shadow-lg hover:shadow-indigo-100/50 hover:text-indigo-600 hover:-translate-y-1 transition-all active:scale-95 group"
-              >
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 border border-gray-100 flex items-center justify-center text-gray-500 group-hover:from-indigo-50 group-hover:to-indigo-100 group-hover:border-indigo-200 group-hover:text-indigo-600 transition-all shadow-sm">
-                  <prod.icon size={28} />
-                </div>
-                <span className="text-sm font-black text-gray-700">{prod.name}</span>
-              </motion.button>
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="flex justify-center py-10">
+              <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+              {dynamicProducts.map((prod, idx) => {
+                const IconComponent = getIconForProduct(prod.id);
+                return (
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.2 + idx * 0.05 }}
+                    key={prod.id}
+                    onClick={() => router.push(`/form/${prod.id}`)}
+                    className="bg-white p-4 rounded-3xl shadow-sm border border-white flex flex-col items-center justify-center gap-3 hover:border-indigo-100 hover:shadow-lg hover:shadow-indigo-100/50 hover:text-indigo-600 hover:-translate-y-1 transition-all active:scale-95 group"
+                  >
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 border border-gray-100 flex items-center justify-center text-gray-500 group-hover:from-indigo-50 group-hover:to-indigo-100 group-hover:border-indigo-200 group-hover:text-indigo-600 transition-all shadow-sm">
+                      <IconComponent size={28} />
+                    </div>
+                    <span className="text-sm font-black text-gray-700">{prod.name}</span>
+                  </motion.button>
+                );
+              })}
+            </div>
+          )}
         </section>
-
       </main>
     </div>
   );
