@@ -261,13 +261,61 @@ export async function getAdminDoc() {
 }
 
 export const DEFAULT_PRODUCTS = [
-  { id: 'car', name: '자동차' },
-  { id: 'coway', name: '코웨이' },
-  { id: 'internet', name: '인터넷TV' },
-  { id: 'mobile', name: '휴대폰' },
-  { id: 'insurance', name: '보험' },
-  { id: 'bio', name: '바이오' }
+  { id: 'internet', name: '인터넷&TV' },
+  { id: 'mobile', name: '휴대폰개통(유심이동)' },
+  { id: 'coway', name: '코웨이렌탈' },
+  { id: 'car', name: '자동차장기 렌트/리스' }
 ];
+
+export const DEFAULT_FORM_CONFIGS: Record<string, any[]> = {
+  'internet': [
+    { id: 'name', label: '이름', type: 'text' },
+    { id: 'residentNum', label: '주민번호', type: 'text' },
+    { id: 'phone', label: '연락처(통신사 포함)', type: 'text' },
+    { id: 'address', label: '주소', type: 'text' },
+    { id: 'email', label: '이메일', type: 'text' },
+    { id: 'bankAccount', label: '출금은행/계좌', type: 'text' },
+    { id: 'withdrawalDate', label: '출금희망일(카드10일,자동이체25일)', type: 'text' },
+    { id: 'currentTelecom', label: '현재사용중통신사', type: 'text' },
+    { id: 'newProduct', label: '신규신청상품(통신사포함)', type: 'text' },
+    { id: 'consultingMemo', label: '상담요청내용(월요금,결합,와이파이유무등등)', type: 'textarea' }
+  ],
+  'mobile': [
+    { id: 'name', label: '이름', type: 'text' },
+    { id: 'residentNum', label: '주민번호', type: 'text' },
+    { id: 'phone', label: '연락처(통신사 포함)', type: 'text' },
+    { id: 'address', label: '주소', type: 'text' },
+    { id: 'bankAccount', label: '출금은행/계좌', type: 'text' },
+    { id: 'withdrawalDate', label: '출금희망일(카드10일,자동이체25일)', type: 'text' },
+    { id: 'currentTelecom', label: '현재사용중통신사', type: 'text' },
+    { id: 'newProduct', label: '신규신청상품(통신사포함)', type: 'text' },
+    { id: 'consultingMemo', label: '상담요청내용(월요금,결합등등)', type: 'textarea' }
+  ],
+  'coway': [
+    { id: 'contractorName', label: '계약자명', type: 'text' },
+    { id: 'birth', label: '생년월일', type: 'text' },
+    { id: 'gender', label: '성별', type: 'text' },
+    { id: 'ownerPhone', label: '본인명의연락처(통신사 포함)', type: 'text' },
+    { id: 'installAddress', label: '설치주소', type: 'text' },
+    { id: 'productName', label: '신청상품명', type: 'text' },
+    { id: 'modelName', label: '모델명', type: 'text' },
+    { id: 'managePeriod', label: '관리주기(2개월,4개월,자가)', type: 'text' },
+    { id: 'contractPeriod', label: '약정', type: 'text' },
+    { id: 'color', label: '색상', type: 'text' },
+    { id: 'monthlyFee', label: '월렌탈료', type: 'text' },
+    { id: 'bankAccount', label: '출금은행/계좌', type: 'text' },
+    { id: 'withdrawalDate', label: '출금희망일(카드10,20일/자동이체10,15,20일)', type: 'text' }
+  ],
+  'car': [
+    { id: 'name', label: '이름', type: 'text' },
+    { id: 'phone', label: '연락처', type: 'text' },
+    { id: 'region', label: '지역', type: 'text' },
+    { id: 'carModel', label: '차종', type: 'text' },
+    { id: 'buyTiming', label: '구매시기(바로,한달이내,3개월이내,미정)', type: 'select', options: '바로,한달이내,3개월이내,미정' },
+    { id: 'rentOrLease', label: '렌트/리스 선택', type: 'select', options: '렌트,리스' },
+    { id: 'consultingMemo', label: '상담요청내용', type: 'textarea' }
+  ]
+};
 
 export async function getDynamicProducts() {
   try {
@@ -333,7 +381,7 @@ export async function getFormConfig(product: string) {
 
     const doc = await getAdminDoc();
     const sheet = doc.sheetsByTitle['form_configs'];
-    if (!sheet) return null;
+    if (!sheet) return DEFAULT_FORM_CONFIGS[product] || null;
 
     const rows = await sheet.getRows();
     const row = rows.find(r => r.get('product') === product);
@@ -342,10 +390,10 @@ export async function getFormConfig(product: string) {
       setCachedData(cacheKey, config);
       return config;
     }
-    return null;
+    return DEFAULT_FORM_CONFIGS[product] || null;
   } catch (e) {
     console.error('Error fetching form config:', e);
-    return null;
+    return DEFAULT_FORM_CONFIGS[product] || null;
   }
 }
 
